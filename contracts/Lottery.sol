@@ -2,13 +2,32 @@
 
 pragma solidity ^0.8.7;
 
+// As an interface to call functions through contract instance
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+// To Inherit functionality
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
+
+// For chainlink keeper
+import "@chainlink/contracts/src/v0.8/AutomationCompatible.sol";
 
 error Lottery__NotEnoughEthEntered();
 error Lottery__TransferFailed();
+error Lottery__NotOpen();
+error Lottery__UpkeepNotNeeded(uint256, currentBalance, uint numPlayers, uint256 lotteryState);
 
-contract Lottery is VRFConsumerBaseV2 {
+/**
+ * @title A advanced lottery Contract
+ * @author Bhimgouda D Patil
+ * @notice This contract is for creating an untamperable decentralized samrt contract
+ * @dev This implements Chainlink VRF v2 and chainlink keepers for contract Automation
+ */
+contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
+    // Type declarations
+    enum LotteryState {
+        OPEN,
+        CALCULATING
+    }
+
     // State Variables
     uint256 private immutable i_entranceFee;
     address payable[] private s_players;
@@ -21,15 +40,32 @@ contract Lottery is VRFConsumerBaseV2 {
 
     // Lottery Variables
     address private s_recentWinner;
+    LotteryState private s_lotteryState;
+    uint256 private s_lastTimeStamp;
+    uint256 private immutable i_interval;
 
     // Events
     event EnteredLottery(address indexed player);
     event RequestedLotteryWinner(uint256 indexed requestId);
     event WinnerPicked(address indexed winner);
 
+    // Modifiers
     modifier minEth() {
         if (msg.value < i_entranceFee) {
             revert Lottery__NotEnoughEthEntered();
+        }
+        _;
+    }
+    modifier ifLotteryOpen() {
+        if (s_lotteryState != LotteryState.OPEN) {
+            revert Lottery__NotOpen();
+        }
+        _;
+    }
+    modifier ifUpkeepNeeded(){
+        (bool upkeepNeeded,) = checkUpkeep("");
+        if(!upkeepNeeded) {
+            revert Lottery__UpkeepNotNeeded(address(this).balance, s_players.length, uint256(s_lotteryState));
         }
         _;
     }
@@ -39,22 +75,51 @@ contract Lottery is VRFConsumerBaseV2 {
         uint256 entranceFee,
         bytes32 gasLane,
         uint64 subscriptionId,
-        uint32 callbackGasLimit
+        uint32 callbackGasLimit,
+        uint256 interval
     ) VRFConsumerBaseV2(vrfCoordinatorV2) {
         i_entranceFee = entranceFee;
         i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinatorV2);
         i_gasLane = gasLane;
         i_subscriptionId = subscriptionId;
         i_callbackGasLimit = callbackGasLimit;
+        s_lotteryState = LotteryState.OPEN;
+        s_lastTimeStamp = block.timeStamp;
+        i_interval = interval;
     }
 
-    function enterLottery() public payable minEth {
+    function enterLottery() public payable minEth ifLotteryOpen {
         s_players.push(payable(msg.sender));
         emit EnteredLottery(msg.sender);
     }
 
+    /**
+     * @dev This is the function that the Chinlink keeper nodes call
+     * & they look for the upkeepNeeded to return true (if given time has passed or logic passes)
+     * In our case for upKeepNeeded to be true we need
+     * 1. Our time interval should have passes
+     * 2. The lottery should have at least 1 player, and have some ETH
+     * 3. Our subscription is funded with LINK
+     * 4. The Lottery should be in an Open state
+     */
+    function checkUpkeep(
+        bytes memory /*checkData*/
+    ) public override returns (bool upkeepNeeded, bytes memory) {
+        //
+        bool isOpen = (s_lotteryState == LotteryState.OPEN);
+        bool timePassed = ((block.timeStamp - s_lastTimeStamp) > i_interval);
+        bool hasPlayers = (s_players.length > 0);
+        bool hasBalance = address(this).balance > 0;
+        upkeepNeeded = (isOpen && timePassed && hasPlayers && hasBalance);
+    }
+    // After checkup keep returns true the performUpkeep will be called
+
     // To get a really big random numbers array/words array but oru array will be of size 1 as we have set NUM_WORDS=1
-    function requestRandomWinner() external {
+    function performUpkeep(bytes memory /* performData */,  ) external override ifUpkeepNeeded {
+        // Just performing an extra check if someone else calls by a modifier attached
+
+        s_lotteryState = LotteryState.CALCULATING;
+
         // Request the random number
         // Once we get it, do something with it
         uint256 requestId = i_vrfCoordinator.requestRandomWords(
@@ -76,7 +141,8 @@ contract Lottery is VRFConsumerBaseV2 {
         uint256 indexOfWinner = randomWords[0] % s_players.length;
         address payable recentWinner = s_players[indexOfWinner];
         s_recentWinner = recentWinner;
-
+        s_lotteryState = LotteryState.OPEN;
+        s_players = new address payable[](0);
         // Sending the winner contract balance without any data ""
         (bool success, ) = recentWinner.call{value: address(this).balance}("");
         if (!success) {
@@ -97,6 +163,22 @@ contract Lottery is VRFConsumerBaseV2 {
 
     function getRecentWinner() public view returns (address) {
         return s_recentWinner;
+    }
+
+    function getLotteryState() public view returns(LotteryState){
+        return s_raffleState;
+    }
+
+    function getNumWords() public view pure returns(uint256){
+        return NUM_WORDS;
+    }
+
+    function getNumberOfPlayers() public view returns (uint256){
+        return s_players.length;
+    }
+
+    function getRequestConfirmations() public pure returns(uint256) {
+        return REQUEST_CONFIRMATIONS;
     }
 }
 
