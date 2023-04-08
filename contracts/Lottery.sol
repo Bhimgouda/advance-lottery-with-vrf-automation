@@ -13,7 +13,7 @@ import "@chainlink/contracts/src/v0.8/AutomationCompatible.sol";
 error Lottery__NotEnoughEthEntered();
 error Lottery__TransferFailed();
 error Lottery__NotOpen();
-error Lottery__UpkeepNotNeeded(uint256, currentBalance, uint numPlayers, uint256 lotteryState);
+error Lottery__UpkeepNotNeeded(uint256 currentBalance, uint numPlayers, uint256 lotteryState);
 
 /**
  * @title A advanced lottery Contract
@@ -62,10 +62,14 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
         }
         _;
     }
-    modifier ifUpkeepNeeded(){
-        (bool upkeepNeeded,) = checkUpkeep("");
-        if(!upkeepNeeded) {
-            revert Lottery__UpkeepNotNeeded(address(this).balance, s_players.length, uint256(s_lotteryState));
+    modifier ifUpkeepNeeded() {
+        (bool upkeepNeeded, ) = checkUpkeep("");
+        if (!upkeepNeeded) {
+            revert Lottery__UpkeepNotNeeded(
+                address(this).balance,
+                s_players.length,
+                uint256(s_lotteryState)
+            );
         }
         _;
     }
@@ -84,7 +88,7 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
         i_subscriptionId = subscriptionId;
         i_callbackGasLimit = callbackGasLimit;
         s_lotteryState = LotteryState.OPEN;
-        s_lastTimeStamp = block.timeStamp;
+        s_lastTimeStamp = block.timestamp;
         i_interval = interval;
     }
 
@@ -107,15 +111,16 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
     ) public override returns (bool upkeepNeeded, bytes memory) {
         //
         bool isOpen = (s_lotteryState == LotteryState.OPEN);
-        bool timePassed = ((block.timeStamp - s_lastTimeStamp) > i_interval);
+        bool timePassed = ((block.timestamp - s_lastTimeStamp) > i_interval);
         bool hasPlayers = (s_players.length > 0);
         bool hasBalance = address(this).balance > 0;
         upkeepNeeded = (isOpen && timePassed && hasPlayers && hasBalance);
     }
+
     // After checkup keep returns true the performUpkeep will be called
 
     // To get a really big random numbers array/words array but oru array will be of size 1 as we have set NUM_WORDS=1
-    function performUpkeep(bytes memory /* performData */,  ) external override ifUpkeepNeeded {
+    function performUpkeep(bytes memory /* performData */) external override ifUpkeepNeeded {
         // Just performing an extra check if someone else calls by a modifier attached
 
         s_lotteryState = LotteryState.CALCULATING;
@@ -165,19 +170,19 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
         return s_recentWinner;
     }
 
-    function getLotteryState() public view returns(LotteryState){
-        return s_raffleState;
+    function getLotteryState() public view returns (LotteryState) {
+        return s_lotteryState;
     }
 
-    function getNumWords() public view pure returns(uint256){
+    function getNumWords() public pure returns (uint256) {
         return NUM_WORDS;
     }
 
-    function getNumberOfPlayers() public view returns (uint256){
+    function getNumberOfPlayers() public view returns (uint256) {
         return s_players.length;
     }
 
-    function getRequestConfirmations() public pure returns(uint256) {
+    function getRequestConfirmations() public pure returns (uint256) {
         return REQUEST_CONFIRMATIONS;
     }
 }
