@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "C:\\myHub\\Blockchain Dev\\Projects\\crypto-lottery-hardhat-&-nextjs\\contracts\\Lottery.sol": {
-      "lastModificationDate": 1680949648831,
-      "contentHash": "7d36f3799d03ac6f0cf9e17decb79289",
+      "lastModificationDate": 1681186074487,
+      "contentHash": "26e68ae4ded5ec4eb159917debcd5ce9",
       "sourceName": "contracts/Lottery.sol",
       "solcConfig": {
         "version": "0.8.7",
@@ -38,7 +38,8 @@
       "imports": [
         "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol",
         "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol",
-        "@chainlink/contracts/src/v0.8/AutomationCompatible.sol"
+        "@chainlink/contracts/src/v0.8/interfaces/AutomationCompatibleInterface.sol",
+        "hardhat/console.sol"
       ],
       "versionPragmas": [
         "^0.8.7"
@@ -90,7 +91,7 @@
       ]
     },
     "C:\\myHub\\Blockchain Dev\\Projects\\crypto-lottery-hardhat-&-nextjs\\node_modules\\@chainlink\\contracts\\src\\v0.8\\interfaces\\VRFCoordinatorV2Interface.sol": {
-      "lastModificationDate": 1680240872235,
+      "lastModificationDate": 1681101608537,
       "contentHash": "8c9ed3426b676f67ee200a2bec96e224",
       "sourceName": "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol",
       "solcConfig": {
@@ -261,7 +262,7 @@
       ]
     },
     "C:\\myHub\\Blockchain Dev\\Projects\\crypto-lottery-hardhat-&-nextjs\\node_modules\\@chainlink\\contracts\\src\\v0.8\\mocks\\VRFCoordinatorV2Mock.sol": {
-      "lastModificationDate": 1680240872244,
+      "lastModificationDate": 1681101608554,
       "contentHash": "a78f72f6c18077e727bc06d7f96b2031",
       "sourceName": "@chainlink/contracts/src/v0.8/mocks/VRFCoordinatorV2Mock.sol",
       "solcConfig": {
@@ -349,8 +350,8 @@
       ]
     },
     "C:\\myHub\\Blockchain Dev\\Projects\\crypto-lottery-hardhat-&-nextjs\\contracts\\test\\VRFCoordinatorV2Mock.sol": {
-      "lastModificationDate": 1680949650833,
-      "contentHash": "52f87769e086936d030176ce9ffb9221",
+      "lastModificationDate": 1681185559177,
+      "contentHash": "01be131301707a08eb3eaf2456940ec9",
       "sourceName": "contracts/test/VRFCoordinatorV2Mock.sol",
       "solcConfig": {
         "version": "0.8.7",
@@ -389,6 +390,48 @@
         "^0.8.0"
       ],
       "artifacts": []
+    },
+    "C:\\myHub\\Blockchain Dev\\Projects\\crypto-lottery-hardhat-&-nextjs\\node_modules\\hardhat\\console.sol": {
+      "lastModificationDate": 1681103997952,
+      "contentHash": "4ff3cd2f6272c9a6516e9ee4f2b967d3",
+      "sourceName": "hardhat/console.sol",
+      "solcConfig": {
+        "version": "0.8.7",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "devdoc",
+                "userdoc",
+                "storageLayout",
+                "evm.gasEstimates"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "metadata": {
+            "useLiteralContent": true
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">= 0.4.22 <0.9.0"
+      ],
+      "artifacts": [
+        "console"
+      ]
     }
   }
 }
